@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>우주 탑승권 (Cosmic Perspective) · COSMOS AIRWAYS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pretendard & JetBrains Mono 폰트 -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020307;
+            color: #f8fafc;
+            font-family: var(--font-sans);
+            touch-action: none;
+        }
+        .font-mono-code {
+            font-family: var(--font-mono);
+        }
+        input {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        /* 커스텀 슬라이더 스타일 */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            background: #e0f2fe;
+            box-shadow: 0 0 12px rgba(125, 211, 252, 0.9);
+            cursor: pointer;
+            margin-top: -6px;
+            transition: transform 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 3px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+        }
+        .glass-panel {
+            background: rgba(8, 12, 24, 0.65);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.11);
+        }
+        .glow-text {
+            text-shadow: 0 2px 20px rgba(2, 6, 23, 0.9), 0 0 24px rgba(186, 230, 253, 0.35);
+        }
+        @keyframes pulseSlow {
+            0%, 100% { opacity: 0.45; transform: translateY(0px); }
+            50% { opacity: 0.95; transform: translateY(4px); }
+        }
+        .animate-scroll-hint {
+            animation: pulseSlow 2.6s infinite ease-in-out;
+        }
+        .fade-transition {
+            transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 체크인 카드 & 결과 항공권 절취선 노치 효과 */
+        .checkin-notch {
+            position: relative;
+        }
+        .checkin-notch::before,
+        .checkin-notch::after {
+            content: '';
+            position: absolute;
+            top: -11px;
+            width: 22px;
+            height: 22px;
+            border-radius: 9999px;
+            background-color: #03050c;
+            z-index: 20;
+        }
+        .checkin-notch::before { left: -11px; }
+        .checkin-notch::after { right: -11px; }
+
+        .ticket-perforation-v {
+            position: relative;
+        }
+        @media (min-width: 768px) {
+            .ticket-perforation-v::before,
+            .ticket-perforation-v::after {
+                content: '';
+                position: absolute;
+                left: -12px;
+                width: 24px;
+                height: 24px;
+                border-radius: 9999px;
+                background-color: #03050a;
+                z-index: 20;
+            }
+            .ticket-perforation-v::before { top: -12px; }
+            .ticket-perforation-v::after { bottom: -12px; }
+        }
+        @media (max-width: 767px) {
+            .ticket-perforation-h::before,
+            .ticket-perforation-h::after {
+                content: '';
+                position: absolute;
+                top: -12px;
+                width: 24px;
+                height: 24px;
+                border-radius: 9999px;
+                background-color: #03050a;
+                z-index: 20;
+            }
+            .ticket-perforation-h::before { left: -12px; }
+            .ticket-perforation-h::after { right: -12px; }
+        }
+    </style>
+</head>
+<body class="relative w-full h-full">
+
+    <!-- 메인 우주 캔버스 -->
+    <canvas id="cosmosCanvas" class="fixed inset-0 w-full h-full block z-0"></canvas>
+
+    <!-- 1. 초기 진입 화면: 항공권 체크인 & 수하물 위탁 패스 (Check-in Boarding Card) -->
+    <div id="introScreen" class="fixed inset-0 z-30 flex items-center justify-center p-4 sm:p-6 bg-[#02040a]/75 backdrop-blur-md fade-transition overflow-y-auto">
+        <div class="w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-white/15 bg-[#0c1324] text-slate-100 my-auto">
+            
+            <!-- 상단 항공사 체크인 헤더 -->
+            <div class="bg-gradient-to-r from-[#091020] via-[#121f3d] to-[#17284e] px-6 py-4 flex items-center justify-between border-b border-white/10">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-300">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="font-mono-code font-bold tracking-widest text-xs sm:text-sm text-white block">COSMOS AIRWAYS</span>
+                        <span class="text-[10px] font-mono-code text-sky-300/75 tracking-wider">FLIGHT VGR-1977 · BAGGAGE DROP</span>
+                    </div>
+                </div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono-code font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-400/25">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    CHECK-IN OPEN
+                </span>
+            </div>
+
+            <!-- 비행 구간 (ERT 1.7m -> UNI 93B LY) -->
+            <div class="px-6 pt-6 pb-5 bg-[#0e162b]">
+                <div class="flex items-center justify-between gap-2">
+                    <div>
+                        <span class="text-[10px] font-mono-code text-slate-400 uppercase block">DEPARTURE</span>
+                        <span class="text-2xl sm:text-3xl font-mono-code font-bold text-white tracking-tight">ERT</span>
+                        <span class="text-xs text-slate-400 block mt-0.5">지구 표면 (1.7m)</span>
+                    </div>
+
+                    <div class="flex-1 flex flex-col items-center px-3">
+                        <span class="text-[10px] font-mono-code text-sky-400/90 mb-1">COSMIC PERSPECTIVE</span>
+                        <div class="w-full flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full border-2 border-sky-400"></span>
+                            <div class="flex-1 border-t border-dashed border-slate-600"></div>
+                            <svg class="w-4 h-4 text-sky-400 rotate-90" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                            </svg>
+                            <div class="flex-1 border-t border-dashed border-slate-600"></div>
+                            <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                        </div>
+                        <span class="text-[10px] font-mono-code text-slate-500 mt-1">93 BILLION LIGHT YEARS</span>
+                    </div>
+
+                    <div class="text-right">
+                        <span class="text-[10px] font-mono-code text-slate-400 uppercase block">ARRIVAL</span>
+                        <span class="text-2xl sm:text-3xl font-mono-code font-bold text-sky-200 tracking-tight">UNI</span>
+                        <span class="text-xs text-slate-400 block mt-0.5">관측 가능한 우주</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 절취선 구분선 & 수하물(고민) 위탁 폼 -->
+            <form id="worryForm" class="checkin-notch border-t border-dashed border-slate-700/80 bg-[#0b1121] px-6 py-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <label for="worryInput" class="text-[11px] font-mono-code font-semibold tracking-wider text-sky-300 uppercase">
+                        EMOTIONAL CARGO / 수하물 위탁 (고민 한 줄)
+                    </label>
+                    <span id="charCount" class="text-[11px] font-mono-code text-slate-500">0/45</span>
+                </div>
+
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="worryInput" 
+                        maxlength="45"
+                        placeholder="우주에 내려놓고 싶은 고민을 적어주세요"
+                        class="w-full px-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/15 text-white placeholder-slate-500 text-sm sm:text-base focus:outline-none focus:border-sky-400/70 focus:bg-white/[0.07] transition"
+                        required
+                    />
+                </div>
+
+                <!-- 빠른 예시 칩 -->
+                <div class="flex flex-wrap gap-1.5">
+                    <button type="button" class="sample-chip text-[11px] px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/10 text-slate-300/90 border border-white/10 transition">
+                        내가 잘하고 있는 건지 불안해
+                    </button>
+                    <button type="button" class="sample-chip text-[11px] px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/10 text-slate-300/90 border border-white/10 transition">
+                        사소한 말실수가 계속 떠올라
+                    </button>
+                    <button type="button" class="sample-chip text-[11px] px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/10 text-slate-300/90 border border-white/10 transition">
+                        미래가 막막하고 너무 지쳐
+                    </button>
+                </div>
+
+                <!-- 옵션: 사운드 켜기 & 자동 비행 시작 옵션 -->
+                <div class="flex items-center justify-between pt-1 text-xs text-slate-400">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="soundEnableCheck" checked class="rounded border-slate-600 bg-slate-800 text-sky-500 focus:ring-sky-500">
+                        <span>명상 사운드 함께 켜기</span>
+                    </label>
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="autoStartCheck" class="rounded border-slate-600 bg-slate-800 text-sky-500 focus:ring-sky-500">
+                        <span>이륙 후 자동 비행</span>
+                    </label>
+                </div>
+
+                <div class="pt-1">
+                    <button 
+                        type="submit"
+                        class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white font-semibold text-sm sm:text-base shadow-lg shadow-sky-500/20 transition transform active:scale-[0.99] flex items-center justify-center gap-2"
+                    >
+                        <span>수하물 위탁 및 이륙하기</span>
+                        <span class="font-mono-code text-xs opacity-80">(BOARD & LAUNCH)</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. 메인 체험 HUD (미니멀 항공우주 텔레메트리 + 핵심 카피 1줄) -->
+    <div id="hudContainer" class="fixed inset-0 z-20 pointer-events-none opacity-0 fade-transition flex flex-col justify-between p-4 sm:p-8">
+        
+        <!-- 상단 바: 항공우주 고도/거리 계기판 & 최소 컨트롤 -->
+        <div class="flex items-start justify-between gap-4">
+            <div class="glass-panel rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 pointer-events-auto">
+                <div class="flex items-center gap-2 text-[11px] sm:text-xs font-mono-code text-sky-300/90 tracking-wide mb-0.5">
+                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+                    <span id="stageTitle">ALT 1.7m · EARTH SURFACE</span>
+                </div>
+                <div class="flex items-baseline gap-2.5">
+                    <span id="scaleReadout" class="text-xl sm:text-2xl font-bold tracking-tight text-white font-mono-code">1.7 m</span>
+                    <span id="scaleRegion" class="text-xs text-slate-400">지표면 관측</span>
+                </div>
+            </div>
+
+            <!-- 우측 상단 컨트롤: 타인의 별빛 / 사운드 / 다시 적기 -->
+            <div class="flex items-center gap-2 pointer-events-auto">
+                <button id="toggleOthersBtn" title="타인의 별빛 표시" class="glass-panel px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-2xl text-xs font-medium text-amber-200/90 hover:bg-white/10 transition flex items-center gap-1.5 border-amber-400/20">
+                    <span>✦</span>
+                    <span class="hidden sm:inline">타인의 별빛</span>
+                </button>
+                <button id="audioToggleBtn" title="사운드 켜기/끄기" class="glass-panel p-2.5 sm:p-3 rounded-2xl text-slate-200 hover:bg-white/10 transition">
+                    <svg id="audioOnIcon" class="w-5 h-5 text-sky-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                    </svg>
+                    <svg id="audioOffIcon" class="w-5 h-5 text-slate-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+                    </svg>
+                </button>
+                <button id="resetQuickBtn" title="고민 다시 적기" class="glass-panel p-2.5 sm:p-3 rounded-2xl text-slate-300 hover:bg-white/10 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- 타인의 별빛 말풍선 팝업 -->
+        <div id="otherStarTooltip" class="fixed pointer-events-none z-30 opacity-0 transition-opacity duration-300 glass-panel px-4 py-2.5 rounded-2xl max-w-xs text-center border-amber-300/30 shadow-lg">
+            <p class="text-[10px] font-mono-code text-amber-300/80 mb-0.5">ANONYMOUS STARLIGHT</p>
+            <p id="otherStarText" class="text-xs sm:text-sm text-white font-medium"></p>
+        </div>
+
+        <!-- 하단 핵심 내레이션 1줄 & 줌 슬라이더 -->
+        <div class="flex flex-col items-center w-full max-w-2xl mx-auto space-y-4">
+            
+            <!-- 핵심 1줄 메시지 -->
+            <div id="narrativeBox" class="text-center px-4 py-1 transition-opacity duration-500">
+                <p id="narrativeQuote" class="text-base sm:text-xl font-medium text-white/95 leading-relaxed glow-text break-keep">
+                    지금 눈앞에서는 이 고민이 세상의 전부처럼 보입니다.
+                </p>
+            </div>
+
+            <!-- 스크롤 유도 힌트 -->
+            <div id="scrollHint" class="flex flex-col items-center text-slate-300/80 text-xs animate-scroll-hint">
+                <span>스크롤하거나 자동 비행을 눌러 줌 아웃</span>
+                <svg class="w-4 h-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                </svg>
+            </div>
+
+            <!-- 하단 줌 프로그레스 슬라이더 & 자동 비행 -->
+            <div class="glass-panel w-full rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 pointer-events-auto flex items-center gap-3 sm:gap-4">
+                <button id="autoZoomBtn" class="px-3 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/30 text-sky-200 text-xs font-medium whitespace-nowrap transition flex items-center gap-1.5">
+                    <span id="autoZoomIcon">▶</span>
+                    <span id="autoZoomLabel">자동 비행</span>
+                </button>
+                
+                <div class="flex-1 flex flex-col">
+                    <input type="range" id="zoomSlider" min="0" max="1000" value="0" class="w-full">
+                    <div class="flex justify-between text-[10px] font-mono-code text-slate-400 mt-1 px-0.5">
+                        <span>1.7m</span>
+                        <span>100km</span>
+                        <span>EARTH</span>
+                        <span>SOLAR</span>
+                        <span>93B LY</span>
+                    </div>
+                </div>
+
+                <button id="openCertificateBtn" class="hidden px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-400 to-indigo-400 text-slate-950 font-bold text-xs whitespace-nowrap shadow-md hover:brightness-110 transition">
+                    탑승권 발급
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 엔딩: 항공권 스타일 '우주 탑승권 (COSMIC PERSPECTIVE BOARDING PASS)' 모달 -->
+    <div id="certificateModal" class="fixed inset-0 z-40 hidden items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md opacity-0 fade-transition overflow-y-auto">
+        <div class="w-full max-w-3xl my-auto flex flex-col items-center">
+            
+            <!-- 항공권 본체 -->
+            <div id="boardingPassElement" class="w-full rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row bg-[#f8fafc] text-slate-900 border border-white/40">
+                
+                <!-- 좌측 메인 탑승권 영역 (70%) -->
+                <div class="flex-1 flex flex-col justify-between">
+                    <!-- 상단 항공사 헤더 바 -->
+                    <div class="bg-gradient-to-r from-[#091124] via-[#111d3a] to-[#17284e] text-white px-6 py-4 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                            <div>
+                                <span class="font-mono-code font-bold tracking-widest text-xs sm:text-sm block">COSMIC PERSPECTIVE BOARDING PASS</span>
+                                <span class="text-[10px] text-sky-300/80 font-mono-code tracking-wider">COSMOS AIRWAYS · FLIGHT VGR-1977</span>
+                            </div>
+                        </div>
+                        <div class="text-right font-mono-code hidden sm:block">
+                            <span class="text-[10px] text-slate-400 block">CLASS</span>
+                            <span class="text-xs font-bold text-amber-300 tracking-wider">OBSERVER</span>
+                        </div>
+                    </div>
+
+                    <!-- 출발지(지구) -> 도착지(우주 끝) 비행 경로 -->
+                    <div class="p-6 sm:p-7 space-y-5 bg-white">
+                        <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-5">
+                            <div>
+                                <span class="text-[10px] font-mono-code text-slate-400 uppercase block">ORIGIN</span>
+                                <span class="text-2xl sm:text-3xl font-mono-code font-bold text-slate-900 tracking-tight">ERT</span>
+                                <span class="text-xs text-slate-500 block mt-0.5">지구 표면 (1.7m)</span>
+                            </div>
+
+                            <div class="flex-1 flex flex-col items-center px-2">
+                                <span class="text-[10px] font-mono-code text-sky-600 font-semibold mb-1">FLIGHT VGR-1977</span>
+                                <div class="w-full flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full border-2 border-sky-500"></span>
+                                    <div class="flex-1 border-t-2 border-dashed border-slate-300"></div>
+                                    <svg class="w-4 h-4 text-sky-600 rotate-90" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                                    </svg>
+                                    <div class="flex-1 border-t-2 border-dashed border-slate-300"></div>
+                                    <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                                </div>
+                                <span class="text-[10px] font-mono-code text-slate-400 mt-1">LOG SCALE 10²⁶m</span>
+                            </div>
+
+                            <div class="text-right">
+                                <span class="text-[10px] font-mono-code text-slate-400 uppercase block">DESTINATION</span>
+                                <span class="text-2xl sm:text-3xl font-mono-code font-bold text-indigo-950 tracking-tight">UNI</span>
+                                <span class="text-xs text-slate-500 block mt-0.5">관측 가능한 우주 (930억 광년)</span>
+                            </div>
+                        </div>
+
+                        <!-- 탑승객 정보 및 우주 대비 고민 비중 -->
+                        <div class="grid grid-cols-3 gap-2 text-left">
+                            <div>
+                                <span class="text-[10px] font-mono-code text-slate-400 block">PASSENGER</span>
+                                <span class="text-xs sm:text-sm font-bold text-slate-800">소중한 지구인</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-mono-code text-slate-400 block">DATE</span>
+                                <span id="certDate" class="text-xs sm:text-sm font-mono-code font-semibold text-slate-800">2026.11.16</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-mono-code text-slate-400 block">COSMIC WEIGHT</span>
+                                <span class="text-[11px] sm:text-xs font-mono-code font-bold text-sky-600">0.00000000000000000000001%</span>
+                            </div>
+                        </div>
+
+                        <!-- 위탁 수하물(고민) 및 맞춤 위로 메시지 박스 -->
+                        <div class="rounded-2xl bg-slate-50 border border-slate-200/80 p-4 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-mono-code font-semibold text-slate-400 uppercase">CONSIGNED CARGO (우주에 내려놓은 고민)</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono-code bg-emerald-100 text-emerald-700 font-semibold">DISPERSED</span>
+                            </div>
+                            <p id="certWorryText" class="text-sm sm:text-base font-bold text-slate-900 break-keep">
+                                "내가 잘하고 있는 건지 불안해"
+                            </p>
+                            <div class="pt-2 border-t border-slate-200/80">
+                                <p id="certComfortMessage" class="text-xs sm:text-sm text-slate-600 leading-relaxed break-keep"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 우측 절취선 스텁 영역 (30%) -->
+                <div class="md:w-56 bg-slate-100 border-t-2 md:border-t-0 md:border-l-2 border-dashed border-slate-300 ticket-perforation-v ticket-perforation-h flex flex-col justify-between">
+                    <div class="bg-[#111d3a] text-white px-5 py-4 flex items-center justify-between md:justify-center">
+                        <span class="font-mono-code text-xs font-bold tracking-widest">BOARDING PASS</span>
+                        <span class="md:hidden font-mono-code text-xs text-sky-300">VGR-1977</span>
+                    </div>
+
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div class="grid grid-cols-2 md:grid-cols-1 gap-3">
+                            <div>
+                                <span class="text-[10px] font-mono-code text-slate-400 block">ROUTE</span>
+                                <span class="text-sm font-mono-code font-bold text-slate-800">ERT → UNI</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-mono-code text-slate-400 block">SEAT / SECTOR</span>
+                                <span class="text-sm font-mono-code font-bold text-slate-800">MILKY WAY 01A</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-mono-code text-slate-400 block">STATUS</span>
+                                <span class="text-xs font-semibold text-sky-700">마음 이륙 완료</span>
+                            </div>
+                        </div>
+
+                        <!-- 시각적 바코드 그래픽 -->
+                        <div class="pt-2">
+                            <div class="h-11 w-full flex items-stretch justify-between gap-[2px] opacity-80" id="ticketBarcode"></div>
+                            <p class="text-[9px] font-mono-code text-center text-slate-400 mt-1.5 tracking-widest">VGR1977-93BLY-0001</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 하단 액션 버튼 바 -->
+            <div class="mt-5 flex flex-wrap items-center justify-center gap-3 w-full">
+                <button id="downloadTicketBtn" class="px-5 py-3 rounded-2xl bg-white text-slate-900 hover:bg-sky-50 font-semibold text-xs sm:text-sm shadow-lg transition flex items-center gap-2">
+                    <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    <span>탑승권 이미지 저장 (PNG)</span>
+                </button>
+                <button id="restartFullBtn" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500 hover:from-sky-400 hover:to-indigo-400 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-sky-500/25 transition">
+                    다시 비행하기
+                </button>
+                <button id="closeCertBtn" class="px-4 py-3 rounded-2xl glass-panel text-slate-300 hover:text-white text-xs sm:text-sm transition">
+                    우주 화면 계속 보기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 토스트 메시지 -->
+    <div id="toastMessage" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full glass-panel text-xs sm:text-sm text-sky-200 border-sky-400/30 shadow-xl opacity-0 pointer-events-none transition-opacity duration-300">
+        탑승권 이미지가 저장되었습니다.
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * 1. 차분하고 고요한 명상 앰비언트 사운드 엔진 (Web Audio API)
+         * 432Hz 기반 따뜻한 Cmaj9 오픈 보이싱 + 느린 호흡 LFO 로우패스 패드
+         * ============================================================================
+         */
+        class SereneCosmosAudio {
+            constructor() {
+                this.ctx = null;
+                this.isMuted = false;
+                this.isInitialized = false;
+                this.masterGain = null;
+                this.padFilter = null;
+            }
+
+            init(startMuted = false) {
+                this.isMuted = startMuted;
+                if (this.isInitialized) {
+                    if (!this.isMuted && this.ctx && this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                    return;
+                }
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+
+                    this.masterGain = this.ctx.createGain();
+                    const initialGain = this.isMuted ? 0.0001 : 0.42;
+                    this.masterGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+                    if (!this.isMuted) {
+                        this.masterGain.gain.exponentialRampToValueAtTime(initialGain, this.ctx.currentTime + 3.2);
+                    }
+                    this.masterGain.connect(this.ctx.destination);
+
+                    this.padFilter = this.ctx.createBiquadFilter();
+                    this.padFilter.type = 'lowpass';
+                    this.padFilter.frequency.value = 360;
+                    this.padFilter.Q.value = 0.65;
+                    this.padFilter.connect(this.masterGain);
+
+                    // 따뜻한 명상 화음 (Cmaj9 오픈 보이싱: C2, G2, D3, E3, B3)
+                    const chordFreqs = [65.41, 98.00, 146.83, 164.81, 246.94];
+                    chordFreqs.forEach((freq, i) => {
+                        const osc = this.ctx.createOscillator();
+                        const oscGain = this.ctx.createGain();
+
+                        osc.type = i < 3 ? 'sine' : 'triangle';
+                        osc.frequency.value = freq;
+                        osc.detune.value = (i % 2 === 0 ? 1 : -1) * 2.8;
+
+                        const lfo = this.ctx.createOscillator();
+                        const lfoGain = this.ctx.createGain();
+                        lfo.frequency.value = 0.055 + i * 0.014;
+                        lfoGain.gain.value = i < 2 ? 0.032 : 0.018;
+
+                        oscGain.gain.value = i < 2 ? 0.16 : 0.05;
+
+                        lfo.connect(lfoGain);
+                        lfoGain.connect(oscGain.gain);
+
+                        osc.connect(oscGain);
+                        oscGain.connect(this.padFilter);
+
+                        osc.start();
+                        lfo.start();
+                    });
+
+                    this.isInitialized = true;
+                } catch (e) {
+                    console.warn("Audio init skipped:", e);
+                }
+            }
+
+            updateProgress(p) {
+                if (!this.isInitialized || !this.ctx || this.isMuted) return;
+                const now = this.ctx.currentTime;
+                const targetFreq = 320 + Math.sin(p * Math.PI) * 160;
+                this.padFilter.frequency.setTargetAtTime(targetFreq, now, 0.5);
+            }
+
+            toggleMute() {
+                if (!this.isInitialized) {
+                    this.init(false);
+                    return false;
+                }
+                this.isMuted = !this.isMuted;
+                const now = this.ctx.currentTime;
+                if (this.isMuted) {
+                    this.masterGain.gain.setTargetAtTime(0.0001, now, 0.25);
+                } else {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    this.masterGain.gain.setTargetAtTime(0.42, now, 0.4);
+                }
+                return this.isMuted;
+            }
+        }
+
+        /**
+         * ============================================================================
+         * 2. 실제 항공우주(Aerospace) 고도 마일스톤 & 직관적이고 짧은 한 줄 카피
+         * ============================================================================
+         */
+        const AEROSPACE_STAGES = [
+            {
+                maxP: 0.12,
+                code: "ALT 1.7m · EARTH SURFACE",
+                region: "지표면 관측",
+                quote: "지금 눈앞에서는 이 고민이 세상의 전부처럼 보입니다."
+            },
+            {
+                maxP: 0.22,
+                code: "ALT 100km · KÁRMÁN LINE",
+                region: "카르만 라인 (우주 경계)",
+                quote: "대기권을 벗어나자 지상의 모든 소음이 고요해집니다."
+            },
+            {
+                maxP: 0.34,
+                code: "ALT 400km · ISS ORBIT",
+                region: "국제우주정거장 고도",
+                quote: "지구를 내려다보는 궤도 위엔 국경도 걱정의 경계도 없습니다."
+            },
+            {
+                maxP: 0.48,
+                code: "DIST 12,742km · PLANET EARTH",
+                region: "푸른 행성 지구 전경",
+                quote: "수십억 명의 밤과 낮이 이 얇은 푸른 별 위에서 함께 흐릅니다."
+            },
+            {
+                maxP: 0.59,
+                code: "DIST 384,400km · LUNAR ORBIT",
+                region: "지구 - 달 궤도",
+                quote: "달까지 빛조차 1.3초를 달려야 닿는 고요한 공간입니다."
+            },
+            {
+                maxP: 0.74,
+                code: "DIST 4.5B km · SOLAR SYSTEM",
+                region: "태양계 8행성 궤도",
+                quote: "여덟 행성이 각자의 속도로 도는 동안, 고민은 작은 점으로 잦아듭니다."
+            },
+            {
+                maxP: 0.85,
+                code: "DIST 6B km · PALE BLUE DOT",
+                region: "보이저 1호 '창백한 푸른 점'",
+                quote: "저 티끌만 한 푸른 점 위에 당신이 아파하는 모든 것이 있습니다."
+            },
+            {
+                maxP: 0.94,
+                code: "DIST 100,000 LY · MILKY WAY",
+                region: "우리 은하 (오리온 팔)",
+                quote: "2,000억 개의 별빛 속에서 당신의 무거운 짐은 이미 흩어졌습니다."
+            },
+            {
+                maxP: 1.01,
+                code: "DIST 93B LY · OBSERVABLE UNIVERSE",
+                region: "관측 가능한 우주",
+                quote: "수천억 개의 은하가 흐르는 우주 앞에서, 당신의 고민은 0에 수렴합니다."
+            }
+        ];
+
+        const OTHER_WORRIES = [
+            "내일 발표를 잘 해낼 수 있을지 너무 떨려요",
+            "주변 친구들은 다 앞서가는 것 같아 조급해요",
+            "아까 그 사람에게 괜한 말을 한 것 같아 후회돼요",
+            "내가 선택한 이 길이 맞는지 확신이 서지 않아요",
+            "오늘 하루도 버텨냈는데 왜 이렇게 공허할까요",
+            "사랑하는 사람을 실망시킬까 봐 두려워요",
+            "그냥 아무 걱정 없이 푹 자고 싶어요",
+            "취업 준비가 길어지면서 자존감이 자꾸 낮아져요"
+        ];
+
+        /**
+         * ============================================================================
+         * 3. 고민 키워드 분석 -> 맞춤형 2~3줄 위로 메시지 생성기
+         * ============================================================================
+         */
+        function generatePersonalizedComfort(worryText) {
+            const text = worryText.replace(/\s+/g, '');
+
+            if (/면접|취업|직장|회사|이직|일|진로|미래|돈|경제|합격|시험|공부|성적/.test(text)) {
+                return `더 나은 내일을 치열하게 준비하고 있기에 찾아온 자연스러운 무게일 거예요.\n우주의 시간 속에서 지금의 막막함은 더 넓은 궤도로 나아가기 위한 짧은 추진력일 뿐이니,\n오늘 하루 애쓴 스스로를 너무 다그치지 마세요.`;
+            }
+            if (/사람|친구|연애|사랑|이별|말실수|관계|가족|부모|눈치|미움|혼자|외로/.test(text)) {
+                return `타인의 마음을 깊이 헤아리는 다정한 사람이기에 작은 흔들림에도 오래 마음이 쓰였을 거예요.\n수십억 명이 살아가는 이 푸른 행성에서 모든 관계가 완벽할 수는 없으니,\n이제는 타인이 아닌 당신 자신의 마음을 가장 먼저 안아주세요.`;
+            }
+            if (/지쳐|피곤|힘들|우울|불안|잠|번아웃|포기|무기력|공허|눈물|아파/.test(text)) {
+                return `그동안 혼자서 얼마나 많은 밤을 묵묵히 버텨왔는지 이 고요한 우주는 알고 있습니다.\n지금은 억지로 빛나려 애쓰지 않아도 괜찮은 중력 제로의 시간이니,\n무거운 짐은 이 우주에 내려놓고 오늘 밤은 부디 깊고 평안히 숨 쉬세요.`;
+            }
+            if (/잘하고|자신|자존감|실패|망칠|후회|부족|비교|조급|늦었/.test(text)) {
+                return `별마다 저마다의 공전 주기와 빛나는 계절이 다르듯, 당신에게도 가장 알맞은 속도가 있습니다.\n지금 흔들리는 이유는 멈춰 서 있어서가 아니라 궤도를 찾아 나아가고 있기 때문이니,\n당신은 이미 충분히 잘 걸어오고 있습니다.`;
+            }
+
+            return `"${worryText}"라는 그 무거운 마음도 광활한 우주에서 바라보면 한 줄기 바람처럼 가벼워집니다.\n지금 당신을 짓누르는 이 순간 역시 결국 지나가는 궤도의 한 점일 뿐이니,\n한결 가벼워진 마음으로 당신만의 빛을 따라 천천히 나아가세요.`;
+        }
+
+        /**
+         * ============================================================================
+         * 4. 고해상도 오프스크린 지구 텍스처 생성기 (다층 fBm 노이즈 + 밤 도시 불빛)
+         * ============================================================================
+         */
+        class RealisticEarthGenerator {
+            constructor() {
+                this.size = 640;
+                this.earthCanvas = document.createElement('canvas');
+                this.earthCanvas.width = this.size;
+                this.earthCanvas.height = this.size;
+                this.generateTexture();
+            }
+
+            // 결정론적 2D 해시 & 스무스 밸류 노이즈
+            hash2(x, y) {
+                const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
+                return n - Math.floor(n);
+            }
+
+            noise2(x, y) {
+                const ix = Math.floor(x);
+                const iy = Math.floor(y);
+                const fx = x - ix;
+                const fy = y - iy;
+                const ux = fx * fx * (3.0 - 2.0 * fx);
+                const uy = fy * fy * (3.0 - 2.0 * fy);
+
+                const a = this.hash2(ix, iy);
+                const b = this.hash2(ix + 1, iy);
+                const c = this.hash2(ix, iy + 1);
+                const d = this.hash2(ix + 1, iy + 1);
+
+                return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
+            }
+
+            fbm(x, y, octaves = 5) {
+                let value = 0.0;
+                let amp = 0.5;
+                let freq = 1.0;
+                for (let i = 0; i < octaves; i++) {
+                    value += amp * this.noise2(x * freq, y * freq);
+                    freq *= 2.05;
+                    amp *= 0.5;
+                }
+                return value;
+            }
+
+            generateTexture() {
+                const s = this.size;
+                const half = s / 2;
+                const r = half * 0.94;
+                const ctx = this.earthCanvas.getContext('2d');
+                const imgData = ctx.createImageData(s, s);
+                const data = imgData.data;
+
+                // 좌상단에서 우하단으로 비추는 은은한 태양광 벡터
+                const lx = -0.68, ly = -0.25, lz = 0.69;
+
+                for (let py = 0; py < s; py++) {
+                    for (let px = 0; px < s; px++) {
+                        const idx = (py * s + px) * 4;
+                        const dx = (px - half) / r;
+                        const dy = (py - half) / r;
+                        const distSq = dx * dx + dy * dy;
+
+                        if (distSq > 1.0) {
+                            data[idx + 3] = 0;
+                            continue;
+                        }
+
+                        const dz = Math.sqrt(Math.max(0, 1.0 - distSq));
+
+                        // 구면 좌표 매핑
+                        const lon = Math.atan2(dx, dz);
+                        const lat = Math.asin(Math.max(-1, Math.min(1, dy)));
+
+                        // 다층 노이즈로 유라시아-아프리카-인도양 느낌의 차분한 지형 생성
+                        const nx = lon * 2.1 + 1.4;
+                        const ny = lat * 2.3 + 0.6;
+                        const warpX = this.fbm(nx * 0.9 + 3.1, ny * 0.9 + 1.7, 3) * 0.75;
+                        const warpY = this.fbm(nx * 0.9 + 8.3, ny * 0.9 + 5.2, 3) * 0.75;
+
+                        const elevation = this.fbm(nx + warpX, ny + warpY, 5);
+                        const moisture = this.fbm(nx * 1.4 - 4.2, ny * 1.4 + 2.9, 4);
+                        const detail = this.fbm(nx * 5.5, ny * 5.5, 3);
+
+                        // 기본 심해 블루 (#0b192e)
+                        let baseR = 11, baseG = 25, baseB = 46;
+                        let isLand = false;
+                        let coastFactor = 0;
+
+                        // 대륙 판정 (임계값 0.495)
+                        if (elevation > 0.495) {
+                            isLand = true;
+                            const h = Math.min(1, (elevation - 0.495) * 4.5);
+                            coastFactor = Math.max(0, 1 - Math.abs(elevation - 0.515) * 28);
+
+                            // 위도 및 습도에 따른 차분한 사막 베이지 / 올리브 / 고산 톤
+                            const desertMix = Math.max(0, 1 - Math.abs(lat + 0.05) * 2.2) * (1 - moisture * 0.85);
+                            const mountainMix = Math.max(0, (h - 0.48) * 1.9);
+
+                            // 올리브-다크그린 초목 톤 (채도를 낮춰 사진처럼 차분하게)
+                            let landR = 46 + detail * 24;
+                            let landG = 64 + detail * 28;
+                            let landB = 45 + detail * 16;
+
+                            // 사막/황토 톤 (사하라·아라비아·중앙아시아 느낌)
+                            const sandR = 148 + detail * 35;
+                            const sandG = 126 + detail * 28;
+                            const sandB = 92 + detail * 20;
+
+                            landR = landR * (1 - desertMix) + sandR * desertMix;
+                            landG = landG * (1 - desertMix) + sandG * desertMix;
+                            landB = landB * (1 - desertMix) + sandB * desertMix;
+
+                            // 고산 지형 음영
+                            landR = landR * (1 - mountainMix * 0.45) + 92 * mountainMix * 0.45;
+                            landG = landG * (1 - mountainMix * 0.45) + 84 * mountainMix * 0.45;
+                            landB = landB * (1 - mountainMix * 0.45) + 76 * mountainMix * 0.45;
+
+                            // 북극권 빙하/설원 블렌딩
+                            const polarIce = Math.max(0, (Math.abs(lat) - 1.12) * 3.8 + (detail - 0.5) * 0.25);
+                            if (polarIce > 0) {
+                                const ice = Math.min(0.88, polarIce);
+                                landR = landR * (1 - ice) + 215 * ice;
+                                landG = landG * (1 - ice) + 224 * ice;
+                                landB = landB * (1 - ice) + 235 * ice;
+                            }
+
+                            baseR = landR;
+                            baseG = landG;
+                            baseB = landB;
+                        } else {
+                            // 얕은 연안 청록빛 살짝 가미
+                            const shallow = Math.max(0, (elevation - 0.455) * 24);
+                            baseR += shallow * 10;
+                            baseG += shallow * 28;
+                            baseB += shallow * 38;
+                        }
+
+                        // 섬세한 기상 위성 구름결 (Swirled Wispy Clouds)
+                        const swirl = this.fbm(nx * 1.3 + 11.2, ny * 1.3 - 6.4, 4);
+                        const cloudNoise = this.fbm(
+                            nx * 2.2 + swirl * 1.85,
+                            ny * 2.6 - swirl * 1.65,
+                            5
+                        );
+                        let cloudAlpha = 0;
+                        if (cloudNoise > 0.54) {
+                            cloudAlpha = Math.min(0.76, Math.pow((cloudNoise - 0.54) * 2.5, 1.35));
+                        }
+
+                        // 구름 합성 (낮 영역에서 은은하게)
+                        const cloudR = 228, cloudG = 234, cloudB = 242;
+                        let litR = baseR * (1 - cloudAlpha) + cloudR * cloudAlpha;
+                        let litG = baseG * (1 - cloudAlpha) + cloudG * cloudAlpha;
+                        let litB = baseB * (1 - cloudAlpha) + cloudB * cloudAlpha;
+
+                        // 태양광 내적 (낮과 밤 경계면 Terminator)
+                        const ndotl = dx * lx + dy * ly + dz * lz;
+                        const dayLight = Math.max(0.03, Math.min(1.0, (ndotl + 0.16) * 1.18));
+                        // 저녁 노을빛 경계선 보정
+                        const twilight = Math.exp(-Math.pow((ndotl + 0.04) * 7.5, 2)) * 0.18;
+
+                        litR = litR * dayLight + twilight * 95;
+                        litG = litG * dayLight + twilight * 58;
+                        litB = litB * dayLight + twilight * 32;
+
+                        // 오른쪽 밤의 영역(ndotl < 0.08) 대륙 해안선 & 내륙 금빛 도시 야경 불빛
+                        if (isLand && ndotl < 0.12 && Math.abs(lat) < 1.05) {
+                            const nightMask = Math.max(0, Math.min(1, (0.12 - ndotl) * 4.2));
+                            const cityCluster = this.fbm(nx * 6.5 + 2.1, ny * 6.5 - 3.4, 3);
+                            const citySparkle = this.hash2(Math.floor(px * 0.85), Math.floor(py * 0.85));
+
+                            const urbanDensity = (coastFactor * 0.52 + Math.max(0, cityCluster - 0.46) * 1.45);
+                            if (urbanDensity > 0.28 && citySparkle > 0.52) {
+                                const intensity = Math.min(1.0, (urbanDensity - 0.25) * 2.4 * (citySparkle - 0.45) * 2.6) * nightMask * (1 - cloudAlpha * 0.65);
+                                litR = Math.min(255, litR + intensity * 255);
+                                litG = Math.min(255, litG + intensity * 192);
+                                litB = Math.min(255, litB + intensity * 78);
+                            }
+                        }
+
+                        // 대기 산란 프레넬 림 라이트 (구체 가장자리 푸른빛)
+                        const fresnel = Math.pow(1.0 - dz, 3.2);
+                        const sunSideRim = Math.max(0.15, (ndotl + 0.55));
+                        litR = Math.min(255, litR + fresnel * 68 * sunSideRim);
+                        litG = Math.min(255, litG + fresnel * 135 * sunSideRim);
+                        litB = Math.min(255, litB + fresnel * 225 * sunSideRim);
+
+                        data[idx] = litR;
+                        data[idx + 1] = litG;
+                        data[idx + 2] = litB;
+                        data[idx + 3] = 255;
+                    }
+                }
+
+                ctx.putImageData(imgData, 0, 0);
+            }
+        }
+
+        /**
+         * ============================================================================
+         * 5. 캔버스 초기화 및 상태 관리
+         * ============================================================================
+         */
+        const canvas = document.getElementById('cosmosCanvas');
+        const ctx = canvas.getContext('2d');
+        const soundEngine = new SereneCosmosAudio();
+        const earthGenerator = new RealisticEarthGenerator();
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        let isStarted = false;
+        let userWorry = "내가 잘하고 있는 건지 불안해";
+        let targetProgress = 0;
+        let currentProgress = 0;
+        let isAutoZooming = false;
+        let showOtherStars = true;
+        let certificateShownOnce = false;
+        let time = 0;
+
+        const bgStars = [];
+        const cosmicNodes = [];
+        const otherStars = [];
+
+        // 태양계 8행성 데이터 (텍스트 라벨 없이 순수 비주얼 중심)
+        const SOLAR_PLANETS = [
+            { orbit: 0.085, size: 2.2, color: "#cbd5e1", speed: 1.6, angle: 0.8 }, // 수성
+            { orbit: 0.125, size: 3.2, color: "#fde68a", speed: 1.2, angle: 2.4 }, // 금성
+            { orbit: 0.175, size: 3.6, color: "#38bdf8", speed: 1.0, angle: 0.0, isEarth: true }, // 지구
+            { orbit: 0.225, size: 2.6, color: "#f87171", speed: 0.8, angle: 4.1 }, // 화성
+            { orbit: 0.315, size: 8.2, color: "#fdba74", speed: 0.45, angle: 1.5, isJupiter: true }, // 목성
+            { orbit: 0.415, size: 6.5, color: "#fcd34d", speed: 0.32, angle: 3.6, hasRings: true }, // 토성
+            { orbit: 0.505, size: 4.4, color: "#67e8f9", speed: 0.22, angle: 5.2 }, // 천왕성
+            { orbit: 0.585, size: 4.2, color: "#60a5fa", speed: 0.16, angle: 2.9 }  // 해왕성
+        ];
+
+        function initProceduralData() {
+            bgStars.length = 0;
+            for (let i = 0; i < 420; i++) {
+                bgStars.push({
+                    x: Math.random(),
+                    y: Math.random(),
+                    size: Math.random() * 1.5 + 0.3,
+                    alpha: Math.random() * 0.8 + 0.2,
+                    twinkleSpeed: Math.random() * 1.5 + 0.6,
+                    hue: Math.random() > 0.8 ? 205 : (Math.random() > 0.5 ? 225 : 42)
+                });
+            }
+
+            cosmicNodes.length = 0;
+            for (let i = 0; i < 105; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.pow(Math.random(), 0.65) * 0.48;
+                cosmicNodes.push({
+                    nx: 0.5 + Math.cos(angle) * radius,
+                    ny: 0.5 + Math.sin(angle) * radius,
+                    size: Math.random() * 2.4 + 0.9
+                });
+            }
+
+            otherStars.length = 0;
+            OTHER_WORRIES.forEach((text, idx) => {
+                const angle = (idx / OTHER_WORRIES.length) * Math.PI * 2 + 0.5;
+                const dist = 0.22 + (idx % 3) * 0.10;
+                otherStars.push({
+                    text,
+                    nx: 0.5 + Math.cos(angle) * dist,
+                    ny: 0.5 + Math.sin(angle) * dist,
+                    appearStart: 0.25 + (idx % 4) * 0.14,
+                    screenX: 0,
+                    screenY: 0,
+                    visible: false
+                });
+            });
+        }
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        initProceduralData();
+
+        /**
+         * ============================================================================
+         * 6. 로그 스케일 수치 포맷터 (1.7m -> 930억 광년)
+         * ============================================================================
+         */
+        function formatLogScale(p) {
+            const logMeters = 0.23 + p * (26.94 - 0.23);
+            const meters = Math.pow(10, logMeters);
+
+            if (meters < 1000) {
+                return `${meters.toFixed(1)} m`;
+            } else if (meters < 1e6) {
+                return `${(meters / 1000).toFixed(1)} km`;
+            } else if (meters < 1e9) {
+                return `${Math.round(meters / 1000).toLocaleString()} km`;
+            } else if (meters < 9.461e15) {
+                const hundredMillionKm = meters / 1e11;
+                if (hundredMillionKm < 100) {
+                    return `${hundredMillionKm.toFixed(1)}억 km`;
+                }
+                return `${Math.round(hundredMillionKm).toLocaleString()}억 km`;
+            } else {
+                const ly = meters / 9.461e15;
+                if (ly < 10000) {
+                    return `${Math.round(ly).toLocaleString()} 광년`;
+                } else if (ly < 1e8) {
+                    return `${(ly / 10000).toFixed(1)}만 광년`;
+                } else {
+                    return `${(ly / 1e8).toFixed(0)}억 광년`;
+                }
+            }
+        }
+
+        /**
+         * ============================================================================
+         * 7. 캔버스 렌더링 파이프라인 (비선형 속도 곡선 & 자연스러운 지구 원근 전환)
+         * ============================================================================
+         */
+        function drawCosmos() {
+            time += 0.016;
+
+            // 사람 -> 지구 -> 태양계 -> 우주 끝까지 처음과 동일한 일정하고 경쾌한 속도(0.00095)로 균일하게 진행
+            if (isAutoZooming && isStarted) {
+                targetProgress = Math.min(1, targetProgress + 0.00095);
+                if (targetProgress >= 1) {
+                    isAutoZooming = false;
+                    updateAutoZoomUI();
+                }
+            }
+            currentProgress += (targetProgress - currentProgress) * 0.085;
+
+            if (isStarted) {
+                updateHUD(currentProgress);
+                soundEngine.updateProgress(currentProgress);
+            }
+
+            // 깊은 우주 배경
+            ctx.fillStyle = '#020307';
+            ctx.fillRect(0, 0, width, height);
+
+            const cx = width / 2;
+            const cy = height / 2;
+            const minDim = Math.min(width, height);
+
+            // [레이어 0] 배경 별빛
+            const starBoost = Math.min(1, 0.25 + currentProgress * 1.15);
+            bgStars.forEach(s => {
+                const twinkle = 0.65 + 0.35 * Math.sin(time * s.twinkleSpeed + s.x * 20);
+                ctx.fillStyle = `hsla(${s.hue}, 75%, 92%, ${s.alpha * twinkle * starBoost})`;
+                ctx.beginPath();
+                ctx.arc(s.x * width, s.y * height, s.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // [레이어 2] 지상의 육지 언덕 -> 지평선 곡률 -> 지구 구체 (사람 뒤에 먼저 그려서 사람이 확실히 보이도록 배치)
+            if (currentProgress < 0.64) {
+                const fadeOut = currentProgress > 0.50 ? Math.max(0, 1 - (currentProgress - 0.50) / 0.14) : 1;
+                drawContinuousEarthAndMoon(cx, cy, minDim, currentProgress, fadeOut);
+            }
+
+            // [레이어 1] 1.7m 사람 픽토그램 실루엣 (지표면 위에 크고 선명하게 서서 줌아웃에 맞춰 축소)
+            if (currentProgress < 0.18) {
+                const alpha = Math.max(0, 1 - currentProgress / 0.15);
+                const scale = Math.pow(0.015, currentProgress / 0.16);
+                drawPersonLayer(cx, cy, minDim, scale, alpha);
+            }
+
+            // [레이어 3] 텍스트 라벨 없는 태양계 8행성 & 창백한 푸른 점 (p: 0.52 ~ 0.87)
+            if (currentProgress > 0.52 && currentProgress < 0.87) {
+                const fadeIn = Math.min(1, (currentProgress - 0.52) / 0.09);
+                const fadeOut = Math.max(0, 1 - (currentProgress - 0.77) / 0.10);
+                const zoomFactor = Math.pow(0.14, (currentProgress - 0.65) / 0.22);
+                drawFullSolarSystemLayer(cx, cy, minDim, zoomFactor, fadeIn * fadeOut, currentProgress);
+            }
+
+            // [레이어 4] 우리 은하 나선팔 (p: 0.78 ~ 0.96)
+            if (currentProgress > 0.78 && currentProgress < 0.96) {
+                const fadeIn = Math.min(1, (currentProgress - 0.78) / 0.07);
+                const fadeOut = Math.max(0, 1 - (currentProgress - 0.89) / 0.07);
+                const zoomFactor = Math.pow(0.18, (currentProgress - 0.85) / 0.11);
+                drawMilkyWayLayer(cx, cy, minDim, zoomFactor, fadeIn * fadeOut);
+            }
+
+            // [레이어 5] 관측 가능한 우주 거대 구조 (p: 0.88 ~ 1.0)
+            if (currentProgress > 0.88) {
+                const fadeIn = Math.min(1, (currentProgress - 0.88) / 0.09);
+                const zoomFactor = 0.88 + (1 - currentProgress) * 0.5;
+                drawCosmicWebLayer(cx, cy, minDim, zoomFactor, fadeIn);
+            }
+
+            // [핵심 인터랙션] 사용자의 고민 문장 물리적 로그 축소
+            drawUserWorryEntity(cx, cy, currentProgress);
+
+            // [타인의 별빛]
+            if (isStarted && showOtherStars && currentProgress > 0.25) {
+                drawOtherPeopleStars(cx, cy, currentProgress);
+            }
+
+            requestAnimationFrame(drawCosmos);
+        }
+
+        function drawPersonLayer(cx, cy, minDim, scale, alpha) {
+            ctx.save();
+            // 육지 표면(cy + minDim * 0.22) 위에 발이 닿도록 배치하고, 화면 크기에 비례해 또렷한 크기로 렌더링
+            const baseScale = Math.max(1.15, minDim / 560);
+            ctx.translate(cx, cy + minDim * 0.22);
+            ctx.scale(scale * baseScale, scale * baseScale);
+            ctx.globalAlpha = alpha;
+
+            // 1. 발밑 부드러운 그림자 및 지면 접지 글로우
+            ctx.fillStyle = 'rgba(2, 6, 23, 0.7)';
+            ctx.beginPath();
+            ctx.ellipse(0, 3, 28, 5.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. 어두운 지구 육지 배경 위에서도 한눈에 또렷하게 보이는 밝은 아이보리-스카이 실루엣
+            ctx.fillStyle = '#f8fafc';
+            ctx.shadowColor = 'rgba(125, 211, 252, 0.85)';
+            ctx.shadowBlur = 18;
+
+            // (a) 둥근 머리 (어깨와 깔끔하게 분리된 간격)
+            ctx.beginPath();
+            ctx.arc(0, -104, 16.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // (b) 왼팔 (약간 바깥쪽으로 기울어진 둥근 끝)
+            ctx.save();
+            ctx.translate(-20.5, -77);
+            ctx.rotate(0.16);
+            ctx.beginPath();
+            ctx.roundRect(-5.5, 0, 11, 42, 5.5);
+            ctx.fill();
+            ctx.restore();
+
+            // (c) 오른팔 (약간 바깥쪽으로 기울어진 둥근 끝)
+            ctx.save();
+            ctx.translate(20.5, -77);
+            ctx.rotate(-0.16);
+            ctx.beginPath();
+            ctx.roundRect(-5.5, 0, 11, 42, 5.5);
+            ctx.fill();
+            ctx.restore();
+
+            // (d) 둥근 어깨 + 상체 + 두 다리
+            ctx.beginPath();
+            ctx.roundRect(-17.5, -80, 35, 42, [11, 11, 2, 2]);
+            ctx.roundRect(-15.5, -40, 13, 40, [0, 0, 6.5, 6.5]);
+            ctx.roundRect(2.5, -40, 13, 40, [0, 0, 6.5, 6.5]);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        /**
+         * 지평선 곡률에서 지구 구체까지 이질감 없이 하나로 이어지는 연속 원근 지구 렌더링
+         */
+        function drawContinuousEarthAndMoon(cx, cy, minDim, p, alpha) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            const baseR = minDim * 0.34;
+            let earthR, earthY;
+
+            if (p <= 0.38) {
+                const t = p / 0.38;
+                const zoomScale = Math.pow(18.0, 1 - t);
+                earthR = baseR * zoomScale;
+                const horizonOffset = (earthR - baseR) + minDim * 0.22 * Math.pow(1 - t, 1.4);
+                earthY = cy + horizonOffset;
+            } else {
+                const t2 = (p - 0.38) / 0.26;
+                const shrink = Math.pow(0.14, t2);
+                earthR = baseR * shrink;
+                earthY = cy;
+            }
+
+            // 1. 대기권 외곽 은은한 푸른 후광 (Atmospheric Halo)
+            const haloR = earthR * 1.16;
+            const atmoHalo = ctx.createRadialGradient(cx, earthY, earthR * 0.92, cx, earthY, haloR);
+            atmoHalo.addColorStop(0, 'rgba(96, 165, 250, 0.38)');
+            atmoHalo.addColorStop(0.45, 'rgba(56, 189, 248, 0.14)');
+            atmoHalo.addColorStop(1, 'rgba(14, 165, 233, 0)');
+            ctx.fillStyle = atmoHalo;
+            ctx.beginPath();
+            ctx.arc(cx, earthY, haloR, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. 프리렌더링된 고해상도 사실적 지구 텍스처 그리기
+            const drawDiam = (earthR / 0.94) * 2;
+            ctx.drawImage(
+                earthGenerator.earthCanvas,
+                cx - drawDiam / 2,
+                earthY - drawDiam / 2,
+                drawDiam,
+                drawDiam
+            );
+
+            // 3. p = 0~0.17 지표면 근접 시 발밑의 육지 언덕(대지) 렌더링
+            if (p < 0.17) {
+                const landFade = 1 - p / 0.17;
+                const horizonY = cy + minDim * 0.22;
+
+                // 여명/황혼 하늘과 맞닿은 대기광 라인
+                const skyMist = ctx.createLinearGradient(0, horizonY - 80, 0, horizonY + 10);
+                skyMist.addColorStop(0, 'rgba(56, 189, 248, 0)');
+                skyMist.addColorStop(1, `rgba(125, 211, 252, ${0.24 * landFade})`);
+                ctx.fillStyle = skyMist;
+                ctx.fillRect(0, horizonY - 80, width, 90);
+
+                // 완만하게 굽어진 대지(육지 언덕) 실루엣
+                const landGrad = ctx.createLinearGradient(0, horizonY - 14, 0, height);
+                landGrad.addColorStop(0, `rgba(34, 48, 40, ${0.96 * landFade})`);
+                landGrad.addColorStop(0.25, `rgba(18, 28, 32, ${0.98 * landFade})`);
+                landGrad.addColorStop(1, `rgba(5, 9, 16, ${1.0 * landFade})`);
+
+                ctx.fillStyle = landGrad;
+                ctx.beginPath();
+                ctx.moveTo(0, height);
+                ctx.lineTo(0, horizonY + 14);
+                ctx.quadraticCurveTo(cx, horizonY - 14, width, horizonY + 14);
+                ctx.lineTo(width, height);
+                ctx.closePath();
+                ctx.fill();
+
+                // 지평선 능선 하이라이트 라인
+                ctx.strokeStyle = `rgba(186, 230, 253, ${0.42 * landFade})`;
+                ctx.lineWidth = 1.4;
+                ctx.beginPath();
+                ctx.moveTo(0, horizonY + 14);
+                ctx.quadraticCurveTo(cx, horizonY - 14, width, horizonY + 14);
+                ctx.stroke();
+            }
+
+            // 4. 달 궤도 및 달 (p > 0.34 이후 자연스럽게 등장)
+            if (p > 0.34) {
+                const moonAlpha = Math.min(1, (p - 0.34) / 0.10);
+                ctx.save();
+                ctx.globalAlpha = alpha * moonAlpha;
+
+                const lunarDist = earthR * 4.2;
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+                ctx.setLineDash([4, 6]);
+                ctx.lineWidth = 1.1;
+                ctx.beginPath();
+                ctx.arc(cx, earthY, lunarDist, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                const moonAngle = -0.48 + time * 0.04;
+                const moonX = cx + Math.cos(moonAngle) * lunarDist;
+                const moonY = earthY + Math.sin(moonAngle) * lunarDist;
+                const moonR = Math.max(1.8, earthR * 0.26);
+
+                const moonGrad = ctx.createRadialGradient(
+                    moonX - moonR * 0.35,
+                    moonY - moonR * 0.2,
+                    moonR * 0.08,
+                    moonX,
+                    moonY,
+                    moonR
+                );
+                moonGrad.addColorStop(0, '#e2e8f0');
+                moonGrad.addColorStop(0.65, '#64748b');
+                moonGrad.addColorStop(1, '#0f172a');
+                ctx.fillStyle = moonGrad;
+                ctx.beginPath();
+                ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+
+        /**
+         * 텍스트 라벨 없이 순수 궤도와 8행성 비주얼만 선명하게 보여주는 태양계
+         */
+        function drawFullSolarSystemLayer(cx, cy, minDim, zoomFactor, alpha, p) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(zoomFactor, zoomFactor);
+            ctx.globalAlpha = alpha;
+
+            const earthOrbitR = minDim * 0.175;
+            const sunX = -earthOrbitR;
+            const sunY = 0;
+
+            // 1. 중심 항성 태양 코로나
+            const sunGlow = ctx.createRadialGradient(sunX, sunY, 2, sunX, sunY, minDim * 0.15);
+            sunGlow.addColorStop(0, '#ffffff');
+            sunGlow.addColorStop(0.18, '#fef08a');
+            sunGlow.addColorStop(0.45, 'rgba(251, 146, 60, 0.32)');
+            sunGlow.addColorStop(1, 'rgba(251, 146, 60, 0)');
+            ctx.fillStyle = sunGlow;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, minDim * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#fffbeb';
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 6.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. 8개 행성 궤도 및 행성 본체 (텍스트 라벨 없음)
+            SOLAR_PLANETS.forEach(planet => {
+                const r = minDim * planet.orbit;
+
+                // 궤도선
+                ctx.strokeStyle = planet.isEarth
+                    ? 'rgba(56, 189, 248, 0.45)'
+                    : 'rgba(148, 163, 184, 0.18)';
+                ctx.lineWidth = planet.isEarth ? 1.5 : 0.9;
+                ctx.beginPath();
+                ctx.arc(sunX, sunY, r, 0, Math.PI * 2);
+                ctx.stroke();
+
+                const angle = planet.isEarth ? 0 : planet.angle + time * 0.06 * planet.speed;
+                const px = sunX + Math.cos(angle) * r;
+                const py = sunY + Math.sin(angle) * r;
+
+                // 토성 고리
+                if (planet.hasRings) {
+                    ctx.save();
+                    ctx.translate(px, py);
+                    ctx.rotate(-0.4);
+                    ctx.strokeStyle = 'rgba(253, 224, 71, 0.72)';
+                    ctx.lineWidth = 2.4;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, planet.size * 2.25, planet.size * 0.78, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // 행성 입체 구체 그라데이션
+                const pGrad = ctx.createRadialGradient(px - planet.size * 0.3, py - planet.size * 0.3, planet.size * 0.1, px, py, planet.size);
+                pGrad.addColorStop(0, '#ffffff');
+                pGrad.addColorStop(0.35, planet.color);
+                pGrad.addColorStop(1, '#0f172a');
+
+                ctx.fillStyle = pGrad;
+                ctx.beginPath();
+                ctx.arc(px, py, planet.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 지구 푸른 후광 강조
+                if (planet.isEarth) {
+                    ctx.strokeStyle = 'rgba(125, 211, 252, 0.55)';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.arc(px, py, planet.size + 3.5, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // 목성 줄무늬 & 대적점
+                if (planet.isJupiter) {
+                    ctx.fillStyle = 'rgba(180, 83, 9, 0.42)';
+                    ctx.fillRect(px - planet.size * 0.85, py - 2, planet.size * 1.7, 1.8);
+                    ctx.fillStyle = '#ea580c';
+                    ctx.beginPath();
+                    ctx.arc(px + 2, py + 2, 1.6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // 3. 보이저 1호 '창백한 푸른 점(Pale Blue Dot)' 광선 연출
+            if (p > 0.72) {
+                const beamAlpha = Math.min(0.30, (p - 0.72) * 2.2);
+                const beamGrad = ctx.createLinearGradient(-minDim * 0.3, -minDim * 0.5, minDim * 0.3, minDim * 0.5);
+                beamGrad.addColorStop(0, 'rgba(253, 224, 71, 0)');
+                beamGrad.addColorStop(0.5, `rgba(254, 240, 138, ${beamAlpha})`);
+                beamGrad.addColorStop(1, 'rgba(253, 224, 71, 0)');
+
+                ctx.fillStyle = beamGrad;
+                ctx.save();
+                ctx.rotate(-0.35);
+                ctx.fillRect(-26, -minDim, 52, minDim * 2);
+                ctx.restore();
+
+                ctx.fillStyle = '#bae6fd';
+                ctx.beginPath();
+                ctx.arc(0, 0, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function drawMilkyWayLayer(cx, cy, minDim, zoomFactor, alpha) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(zoomFactor, zoomFactor);
+            ctx.rotate(time * 0.02);
+            ctx.globalAlpha = alpha;
+
+            const galaxyR = minDim * 0.65;
+
+            const coreGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, galaxyR * 0.42);
+            coreGrad.addColorStop(0, '#fffbeb');
+            coreGrad.addColorStop(0.25, 'rgba(253, 224, 71, 0.65)');
+            coreGrad.addColorStop(0.6, 'rgba(129, 140, 248, 0.25)');
+            coreGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+            ctx.fillStyle = coreGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, galaxyR * 0.42, 0, Math.PI * 2);
+            ctx.fill();
+
+            const arms = 4;
+            const starsPerArm = 115;
+            for (let a = 0; a < arms; a++) {
+                const armAngle = (a / arms) * Math.PI * 2;
+                for (let i = 1; i < starsPerArm; i++) {
+                    const ratio = i / starsPerArm;
+                    const dist = ratio * galaxyR;
+                    const spiralAngle = armAngle + ratio * 3.4;
+                    const spread = (Math.sin(i * 12.9898) * 0.5) * ratio * 36;
+
+                    const sx = Math.cos(spiralAngle) * dist + spread;
+                    const sy = Math.sin(spiralAngle) * dist * 0.68 + spread * 0.6;
+
+                    ctx.fillStyle = ratio < 0.4
+                        ? `rgba(254, 240, 138, ${0.75 * (1 - ratio)})`
+                        : `rgba(147, 197, 253, ${0.65 * (1 - ratio * 0.7)})`;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, (1 - ratio) * 2.1 + 0.6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // 태양계 위치 마커 (오리온 팔)
+            const solX = galaxyR * 0.48;
+            const solY = galaxyR * 0.14;
+            ctx.strokeStyle = 'rgba(125, 211, 252, 0.75)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(solX, solY, 7, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#bae6fd';
+            ctx.font = '500 11px Pretendard, sans-serif';
+            ctx.fillText('태양계 (당신이 있는 곳)', solX + 12, solY + 4);
+
+            ctx.restore();
+        }
+
+        function drawCosmicWebLayer(cx, cy, minDim, zoomFactor, alpha) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(zoomFactor, zoomFactor);
+            ctx.translate(-width / 2, -height / 2);
+            ctx.globalAlpha = alpha;
+
+            ctx.lineWidth = 0.8;
+            for (let i = 0; i < cosmicNodes.length; i++) {
+                const n1 = cosmicNodes[i];
+                const x1 = n1.nx * width;
+                const y1 = n1.ny * height;
+
+                for (let j = i + 1; j < cosmicNodes.length; j++) {
+                    const n2 = cosmicNodes[j];
+                    const x2 = n2.nx * width;
+                    const y2 = n2.ny * height;
+                    const dist = Math.hypot(x1 - x2, y1 - y2);
+
+                    if (dist < minDim * 0.22) {
+                        const lineAlpha = (1 - dist / (minDim * 0.22)) * 0.34;
+                        ctx.strokeStyle = `rgba(165, 180, 252, ${lineAlpha})`;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                }
+
+                const nodeGlow = ctx.createRadialGradient(x1, y1, 0.5, x1, y1, n1.size * 5);
+                nodeGlow.addColorStop(0, 'rgba(224, 242, 254, 0.9)');
+                nodeGlow.addColorStop(0.5, 'rgba(129, 140, 248, 0.3)');
+                nodeGlow.addColorStop(1, 'rgba(129, 140, 248, 0)');
+                ctx.fillStyle = nodeGlow;
+                ctx.beginPath();
+                ctx.arc(x1, y1, n1.size * 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function drawUserWorryEntity(cx, cy, p) {
+            if (!isStarted) return;
+
+            ctx.save();
+            // 1.7m 시점에서 사람 픽토그램 머리 바로 위에 위치하다가 줌 아웃 비율에 맞춰 함께 축소
+            const minDim = Math.min(width, height);
+            const basePersonScale = Math.max(1.15, minDim / 560);
+            const personScale = Math.pow(0.015, Math.min(1, p / 0.16)) * basePersonScale;
+            const startY = (cy + minDim * 0.22) - 165 * personScale;
+            const anchorY = p < 0.16 ? startY : cy;
+
+            const textScale = Math.pow(0.004, Math.min(1, p / 0.38));
+            const textAlpha = Math.max(0, 1 - p / 0.34);
+
+            ctx.translate(cx, anchorY);
+
+            if (p > 0.20 && p < 0.80) {
+                const dotAlpha = Math.max(0, 1 - (p - 0.20) / 0.6) * 0.85;
+                ctx.fillStyle = `rgba(125, 211, 252, ${dotAlpha})`;
+                ctx.beginPath();
+                ctx.arc(0, 0, Math.max(0.8, 2.2 * (1 - p)), 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            if (textAlpha > 0.01 && textScale > 0.015) {
+                ctx.scale(textScale, textScale);
+                ctx.globalAlpha = textAlpha;
+
+                const fontSize = Math.max(16, Math.min(width * 0.045, 26));
+                ctx.font = `700 ${fontSize}px Pretendard, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                const metrics = ctx.measureText(userWorry);
+                const boxW = metrics.width + 40;
+                const boxH = fontSize * 2.0;
+
+                // 사람 머리 위 말풍선 꼬리 & 캡슐 박스
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.58)';
+                ctx.strokeStyle = 'rgba(125, 211, 252, 0.55)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(-boxW / 2, -boxH / 2, boxW, boxH, 999);
+                ctx.fill();
+                ctx.stroke();
+
+                // 말풍선 아래 작은 연결 점 (사람 머리 위를 가리킴)
+                ctx.fillStyle = 'rgba(125, 211, 252, 0.65)';
+                ctx.beginPath();
+                ctx.arc(0, boxH / 2 + 8, 3.2, 0, Math.PI * 2);
+                ctx.arc(0, boxH / 2 + 16, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowColor = 'rgba(56, 189, 248, 0.75)';
+                ctx.shadowBlur = 14;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(userWorry, 0, 1);
+            }
+
+            ctx.restore();
+        }
+
+        function drawOtherPeopleStars(cx, cy, p) {
+            otherStars.forEach((star, idx) => {
+                if (p < star.appearStart) {
+                    star.visible = false;
+                    return;
+                }
+                star.visible = true;
+                const localP = (p - star.appearStart) / (1 - star.appearStart);
+                const expand = 0.65 + localP * 0.75;
+
+                const sx = cx + (star.nx - 0.5) * width * expand;
+                const sy = cy + (star.ny - 0.5) * height * expand;
+                star.screenX = sx;
+                star.screenY = sy;
+
+                const pulse = 0.7 + 0.3 * Math.sin(time * 2.2 + idx);
+                const alpha = Math.min(0.9, (p - star.appearStart) * 5) * pulse;
+
+                const glow = ctx.createRadialGradient(sx, sy, 0.5, sx, sy, 13);
+                glow.addColorStop(0, `rgba(254, 243, 199, ${alpha})`);
+                glow.addColorStop(0.5, `rgba(251, 191, 36, ${alpha * 0.35})`);
+                glow.addColorStop(1, 'rgba(251, 191, 36, 0)');
+
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 13, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        /**
+         * ============================================================================
+         * 8. HUD 및 탑승권(Boarding Pass) PNG 렌더링 & 이벤트 처리
+         * ============================================================================
+         */
+        const introScreen = document.getElementById('introScreen');
+        const hudContainer = document.getElementById('hudContainer');
+        const worryForm = document.getElementById('worryForm');
+        const worryInput = document.getElementById('worryInput');
+        const charCount = document.getElementById('charCount');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const scaleReadout = document.getElementById('scaleReadout');
+        const scaleRegion = document.getElementById('scaleRegion');
+        const stageTitle = document.getElementById('stageTitle');
+        const narrativeQuote = document.getElementById('narrativeQuote');
+        const scrollHint = document.getElementById('scrollHint');
+        const openCertificateBtn = document.getElementById('openCertificateBtn');
+        const certificateModal = document.getElementById('certificateModal');
+        const otherStarTooltip = document.getElementById('otherStarTooltip');
+        const otherStarText = document.getElementById('otherStarText');
+
+        let lastStageIndex = -1;
+
+        function updateHUD(p) {
+            zoomSlider.value = Math.round(p * 1000);
+            scaleReadout.textContent = formatLogScale(p);
+
+            scrollHint.style.opacity = p > 0.04 ? '0' : '1';
+
+            const stageIdx = AEROSPACE_STAGES.findIndex(s => p <= s.maxP);
+            const activeIdx = stageIdx === -1 ? AEROSPACE_STAGES.length - 1 : stageIdx;
+
+            if (activeIdx !== lastStageIndex) {
+                lastStageIndex = activeIdx;
+                const stage = AEROSPACE_STAGES[activeIdx];
+                stageTitle.textContent = stage.code;
+                scaleRegion.textContent = stage.region;
+
+                narrativeQuote.style.opacity = '0';
+                setTimeout(() => {
+                    narrativeQuote.textContent = stage.quote;
+                    narrativeQuote.style.opacity = '1';
+                }, 160);
+            }
+
+            if (p >= 0.96) {
+                openCertificateBtn.classList.remove('hidden');
+                if (!certificateShownOnce) {
+                    certificateShownOnce = true;
+                    setTimeout(showCertificateModal, 900);
+                }
+            }
+        }
+
+        function renderBarcodeBars() {
+            const container = document.getElementById('ticketBarcode');
+            container.innerHTML = '';
+            const widths = [2, 1, 3, 1, 2, 4, 1, 2, 1, 3, 2, 1, 2, 3, 1, 1, 4, 2, 1, 2, 3, 1, 2];
+            widths.forEach(w => {
+                const bar = document.createElement('div');
+                bar.style.width = `${w}px`;
+                bar.className = 'bg-slate-800 h-full rounded-[0.5px]';
+                container.appendChild(bar);
+            });
+        }
+
+        function showCertificateModal() {
+            document.getElementById('certWorryText').textContent = `"${userWorry}"`;
+            const comfortMsg = generatePersonalizedComfort(userWorry);
+            document.getElementById('certComfortMessage').innerHTML = comfortMsg.replace(/\n/g, '<br>');
+
+            const now = new Date();
+            document.getElementById('certDate').textContent = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+
+            renderBarcodeBars();
+
+            certificateModal.classList.remove('hidden');
+            certificateModal.classList.add('flex');
+            requestAnimationFrame(() => {
+                certificateModal.style.opacity = '1';
+            });
+        }
+
+        function hideCertificateModal() {
+            certificateModal.style.opacity = '0';
+            setTimeout(() => {
+                certificateModal.classList.add('hidden');
+                certificateModal.classList.remove('flex');
+            }, 400);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastMessage');
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 2600);
+        }
+
+        /**
+         * 항공권 탑승권 고해상도 PNG 이미지 생성 및 다운로드
+         */
+        function downloadBoardingPassPNG() {
+            const tCanvas = document.createElement('canvas');
+            tCanvas.width = 1080;
+            tCanvas.height = 540;
+            const tCtx = tCanvas.getContext('2d');
+
+            tCtx.fillStyle = '#03050a';
+            tCtx.fillRect(0, 0, 1080, 540);
+
+            const pad = 36;
+            const cardW = 1080 - pad * 2;
+            const cardH = 540 - pad * 2;
+            const stubX = pad + 710;
+
+            tCtx.save();
+            tCtx.beginPath();
+            tCtx.roundRect(pad, pad, cardW, cardH, 28);
+            tCtx.clip();
+
+            tCtx.fillStyle = '#ffffff';
+            tCtx.fillRect(pad, pad, 710, cardH);
+            tCtx.fillStyle = '#f1f5f9';
+            tCtx.fillRect(stubX, pad, cardW - 710, cardH);
+
+            const headerGrad = tCtx.createLinearGradient(pad, pad, pad + cardW, pad);
+            headerGrad.addColorStop(0, '#091124');
+            headerGrad.addColorStop(1, '#17284e');
+            tCtx.fillStyle = headerGrad;
+            tCtx.fillRect(pad, pad, cardW, 74);
+
+            tCtx.fillStyle = '#ffffff';
+            tCtx.font = 'bold 18px "JetBrains Mono", monospace';
+            tCtx.fillText('COSMIC PERSPECTIVE BOARDING PASS', pad + 34, pad + 38);
+            tCtx.fillStyle = '#7dd3fc';
+            tCtx.font = '500 12px "JetBrains Mono", monospace';
+            tCtx.fillText('COSMOS AIRWAYS · FLIGHT VGR-1977', pad + 34, pad + 58);
+
+            tCtx.textAlign = 'center';
+            tCtx.fillStyle = '#ffffff';
+            tCtx.font = 'bold 14px "JetBrains Mono", monospace';
+            tCtx.fillText('BOARDING PASS', stubX + (cardW - 710) / 2, pad + 44);
+
+            tCtx.textAlign = 'left';
+            tCtx.fillStyle = '#94a3b8';
+            tCtx.font = '600 12px "JetBrains Mono", monospace';
+            tCtx.fillText('ORIGIN', pad + 34, pad + 114);
+            tCtx.fillStyle = '#0f172a';
+            tCtx.font = 'bold 40px "JetBrains Mono", monospace';
+            tCtx.fillText('ERT', pad + 34, pad + 154);
+            tCtx.fillStyle = '#64748b';
+            tCtx.font = '500 14px Pretendard, sans-serif';
+            tCtx.fillText('지구 표면 (1.7m)', pad + 34, pad + 178);
+
+            tCtx.strokeStyle = '#cbd5e1';
+            tCtx.setLineDash([6, 6]);
+            tCtx.lineWidth = 2;
+            tCtx.beginPath();
+            tCtx.moveTo(pad + 180, pad + 142);
+            tCtx.lineTo(stubX - 210, pad + 142);
+            tCtx.stroke();
+            tCtx.setLineDash([]);
+
+            tCtx.fillStyle = '#0284c7';
+            tCtx.font = 'bold 13px "JetBrains Mono", monospace';
+            tCtx.textAlign = 'center';
+            tCtx.fillText('✈  LOG SCALE 10²⁶m', pad + 355, pad + 132);
+
+            tCtx.textAlign = 'right';
+            tCtx.fillStyle = '#94a3b8';
+            tCtx.font = '600 12px "JetBrains Mono", monospace';
+            tCtx.fillText('DESTINATION', stubX - 34, pad + 114);
+            tCtx.fillStyle = '#1e1b4b';
+            tCtx.font = 'bold 40px "JetBrains Mono", monospace';
+            tCtx.fillText('UNI', stubX - 34, pad + 154);
+            tCtx.fillStyle = '#64748b';
+            tCtx.font = '500 14px Pretendard, sans-serif';
+            tCtx.fillText('관측 가능한 우주 (930억 광년)', stubX - 34, pad + 178);
+
+            tCtx.fillStyle = '#f8fafc';
+            tCtx.strokeStyle = '#e2e8f0';
+            tCtx.lineWidth = 1.5;
+            tCtx.beginPath();
+            tCtx.roundRect(pad + 34, pad + 205, 642, 230, 16);
+            tCtx.fill();
+            tCtx.stroke();
+
+            tCtx.textAlign = 'left';
+            tCtx.fillStyle = '#94a3b8';
+            tCtx.font = '600 11px "JetBrains Mono", monospace';
+            tCtx.fillText('CONSIGNED CARGO (우주에 내려놓은 고민)', pad + 56, pad + 234);
+
+            tCtx.fillStyle = '#0f172a';
+            tCtx.font = 'bold 20px Pretendard, sans-serif';
+            tCtx.fillText(`"${userWorry}"`, pad + 56, pad + 266);
+
+            tCtx.strokeStyle = '#e2e8f0';
+            tCtx.beginPath();
+            tCtx.moveTo(pad + 56, pad + 286);
+            tCtx.lineTo(pad + 654, pad + 286);
+            tCtx.stroke();
+
+            const comfortLines = generatePersonalizedComfort(userWorry).split('\n');
+            tCtx.fillStyle = '#475569';
+            tCtx.font = '500 15px Pretendard, sans-serif';
+            comfortLines.forEach((line, idx) => {
+                tCtx.fillText(line, pad + 56, pad + 318 + idx * 28);
+            });
+
+            const stubPadX = stubX + 26;
+            tCtx.fillStyle = '#94a3b8';
+            tCtx.font = '600 11px "JetBrains Mono", monospace';
+            tCtx.fillText('PASSENGER', stubPadX, pad + 114);
+            tCtx.fillStyle = '#0f172a';
+            tCtx.font = 'bold 16px Pretendard, sans-serif';
+            tCtx.fillText('소중한 지구인', stubPadX, pad + 136);
+
+            tCtx.fillStyle = '#94a3b8';
+            tCtx.font = '600 11px "JetBrains Mono", monospace';
+            tCtx.fillText('COSMIC WEIGHT', stubPadX, pad + 174);
+            tCtx.fillStyle = '#0284c7';
+            tCtx.font = 'bold 11.5px "JetBrains Mono", monospace';
+            tCtx.fillText('0.00000000000000000000001%', stubPadX, pad + 196);
+
+            tCtx.fillStyle = '#94a3b8';
+            tCtx.font = '600 11px "JetBrains Mono", monospace';
+            tCtx.fillText('SECTOR', stubPadX, pad + 234);
+            tCtx.fillStyle = '#0f172a';
+            tCtx.font = 'bold 15px "JetBrains Mono", monospace';
+            tCtx.fillText('MILKY WAY 01A', stubPadX, pad + 256);
+
+            const bars = [3, 1, 4, 2, 1, 5, 2, 3, 1, 4, 2, 1, 3, 4, 1, 2, 5, 2, 1, 3, 2, 4];
+            let bx = stubPadX;
+            tCtx.fillStyle = '#1e293b';
+            bars.forEach(bw => {
+                tCtx.fillRect(bx, pad + 345, bw * 2.2, 62);
+                bx += bw * 2.2 + 4.5;
+            });
+            tCtx.fillStyle = '#64748b';
+            tCtx.font = '500 11px "JetBrains Mono", monospace';
+            tCtx.fillText('VGR1977-93BLY-0001', stubPadX + 18, pad + 426);
+
+            tCtx.strokeStyle = '#cbd5e1';
+            tCtx.setLineDash([7, 7]);
+            tCtx.lineWidth = 2;
+            tCtx.beginPath();
+            tCtx.moveTo(stubX, pad + 74);
+            tCtx.lineTo(stubX, pad + cardH);
+            tCtx.stroke();
+            tCtx.setLineDash([]);
+
+            tCtx.restore();
+
+            tCtx.fillStyle = '#03050a';
+            tCtx.beginPath();
+            tCtx.arc(stubX, pad, 16, 0, Math.PI * 2);
+            tCtx.arc(stubX, pad + cardH, 16, 0, Math.PI * 2);
+            tCtx.fill();
+
+            const link = document.createElement('a');
+            link.download = `COSMIC_BOARDING_PASS_${Date.now()}.png`;
+            link.href = tCanvas.toDataURL('image/png');
+            link.click();
+            showToast('우주 탑승권 이미지(PNG)가 저장되었습니다!');
+        }
+
+        // 입력 및 폼 이벤트
+        worryInput.addEventListener('input', () => {
+            charCount.textContent = `${worryInput.value.length}/45`;
+        });
+
+        document.querySelectorAll('.sample-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                worryInput.value = chip.textContent.trim();
+                charCount.textContent = `${worryInput.value.length}/45`;
+                worryInput.focus();
+            });
+        });
+
+        worryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const val = worryInput.value.trim();
+            if (!val) return;
+
+            userWorry = val;
+            isStarted = true;
+            targetProgress = 0;
+            currentProgress = 0;
+            certificateShownOnce = false;
+            lastStageIndex = -1;
+
+            const soundOn = document.getElementById('soundEnableCheck').checked;
+            soundEngine.init(!soundOn);
+            document.getElementById('audioOnIcon').classList.toggle('hidden', !soundOn);
+            document.getElementById('audioOffIcon').classList.toggle('hidden', soundOn);
+
+            const autoStart = document.getElementById('autoStartCheck').checked;
+            isAutoZooming = autoStart;
+            updateAutoZoomUI();
+
+            introScreen.style.opacity = '0';
+            introScreen.style.pointerEvents = 'none';
+            hudContainer.style.opacity = '1';
+        });
+
+        // 휠 & 터치 제스처
+        window.addEventListener('wheel', (e) => {
+            if (!isStarted || !certificateModal.classList.contains('hidden')) return;
+            isAutoZooming = false;
+            updateAutoZoomUI();
+            targetProgress = Math.max(0, Math.min(1, targetProgress + e.deltaY * 0.00038));
+        }, { passive: true });
+
+        let touchStartY = 0;
+        let initialPinchDist = null;
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (!isStarted) return;
+            isAutoZooming = false;
+            updateAutoZoomUI();
+
+            if (e.touches.length === 1) {
+                touchStartY = e.touches[0].clientY;
+                checkOtherStarInteraction(e.touches[0].clientX, e.touches[0].clientY);
+            } else if (e.touches.length === 2) {
+                initialPinchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isStarted) return;
+            if (e.touches.length === 1) {
+                const dy = touchStartY - e.touches[0].clientY;
+                touchStartY = e.touches[0].clientY;
+                targetProgress = Math.max(0, Math.min(1, targetProgress + dy * 0.0014));
+            } else if (e.touches.length === 2 && initialPinchDist) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const pinchDelta = (initialPinchDist - dist) * 0.0022;
+                initialPinchDist = dist;
+                targetProgress = Math.max(0, Math.min(1, targetProgress + pinchDelta));
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isStarted || !showOtherStars) return;
+            checkOtherStarInteraction(e.clientX, e.clientY);
+        });
+
+        function checkOtherStarInteraction(mx, my) {
+            let hoveredStar = null;
+            for (const star of otherStars) {
+                if (!star.visible) continue;
+                if (Math.hypot(mx - star.screenX, my - star.screenY) < 24) {
+                    hoveredStar = star;
+                    break;
+                }
+            }
+
+            if (hoveredStar) {
+                canvas.style.cursor = 'pointer';
+                otherStarText.textContent = `"${hoveredStar.text}"`;
+                otherStarTooltip.style.left = `${Math.min(width - 220, Math.max(20, hoveredStar.screenX - 100))}px`;
+                otherStarTooltip.style.top = `${Math.max(80, hoveredStar.screenY - 68)}px`;
+                otherStarTooltip.style.opacity = '1';
+            } else {
+                canvas.style.cursor = 'default';
+                otherStarTooltip.style.opacity = '0';
+            }
+        }
+
+        zoomSlider.addEventListener('input', () => {
+            isAutoZooming = false;
+            updateAutoZoomUI();
+            targetProgress = parseInt(zoomSlider.value, 10) / 1000;
+        });
+
+        const autoZoomBtn = document.getElementById('autoZoomBtn');
+        function updateAutoZoomUI() {
+            document.getElementById('autoZoomIcon').textContent = isAutoZooming ? '⏸' : '▶';
+            document.getElementById('autoZoomLabel').textContent = isAutoZooming ? '일시정지' : '자동 비행';
+        }
+        autoZoomBtn.addEventListener('click', () => {
+            if (targetProgress >= 0.99) targetProgress = 0;
+            isAutoZooming = !isAutoZooming;
+            updateAutoZoomUI();
+        });
+
+        const toggleOthersBtn = document.getElementById('toggleOthersBtn');
+        toggleOthersBtn.addEventListener('click', () => {
+            showOtherStars = !showOtherStars;
+            toggleOthersBtn.style.opacity = showOtherStars ? '1' : '0.45';
+            otherStarTooltip.style.opacity = '0';
+        });
+
+        document.getElementById('audioToggleBtn').addEventListener('click', () => {
+            const muted = soundEngine.toggleMute();
+            document.getElementById('audioOnIcon').classList.toggle('hidden', muted);
+            document.getElementById('audioOffIcon').classList.toggle('hidden', !muted);
+        });
+
+        openCertificateBtn.addEventListener('click', showCertificateModal);
+        document.getElementById('closeCertBtn').addEventListener('click', hideCertificateModal);
+        document.getElementById('downloadTicketBtn').addEventListener('click', downloadBoardingPassPNG);
+
+        function resetExperience() {
+            hideCertificateModal();
+            isStarted = false;
+            isAutoZooming = false;
+            updateAutoZoomUI();
+            targetProgress = 0;
+            currentProgress = 0;
+            openCertificateBtn.classList.add('hidden');
+            hudContainer.style.opacity = '0';
+            introScreen.style.opacity = '1';
+            introScreen.style.pointerEvents = 'auto';
+            worryInput.value = '';
+            charCount.textContent = '0/45';
+        }
+
+        document.getElementById('resetQuickBtn').addEventListener('click', resetExperience);
+        document.getElementById('restartFullBtn').addEventListener('click', resetExperience);
+
+        window.onload = function() {
+            drawCosmos();
+        };
+    </script>
+</body>
+</html>
